@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boom Boulevard | Official Game Site</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@400;700;900&family=Permanent+Marker&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --danger: #ff4d4d;
+            --safe: #2ecc71;
+            --warning: #f1c40f;
+            --reverse: #e67e22;
+            --chaos: #d946ef;
+            --defense: #06b6d4;
+            --peek: #94a3b8;
+            --shield: #38bdf8;
+            --asphalt: #0f172a;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 77, 77, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); }
+        }
+
+        @keyframes neon-flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+            20%, 22%, 24%, 55% { opacity: 0.4; }
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617;
+            color: #f8fafc;
+            scroll-behavior: smooth;
+        }
+
+        h1, h2, h3 { font-family: 'Bungee', cursive; text-transform: uppercase; letter-spacing: 0.05em; }
+        .marker-font { font-family: 'Permanent Marker', cursive; }
+        
+        .board-wrapper {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            padding: 40px;
+            border-radius: 40px;
+            border: 2px solid #334155;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), inset 0 0 100px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .board-wrapper::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(#ffffff05 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+        }
+
+        .board-container {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 16px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .board-tile {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-weight: 900;
+            font-size: 0.55rem;
+            text-align: center;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.1);
+            text-transform: uppercase;
+            padding: 6px;
+            overflow: hidden;
+        }
+        
+        .board-tile:hover {
+            transform: translateY(-12px) scale(1.15);
+            z-index: 50;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .tile-hud { position: absolute; top: 2px; right: 2px; font-size: 0.4rem; opacity: 0.4; font-family: monospace; }
+        .tile-icon { font-size: 1.4rem; margin-bottom: 4px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+        .tile-num { position: absolute; bottom: 4px; left: 6px; font-size: 0.6rem; opacity: 0.7; font-weight: 900; }
+
+        .start-tile { background: #f8fafc; color: #020617; border: 4px solid #f1c40f; box-shadow: 0 0 20px rgba(241, 196, 15, 0.4); }
+        .end-tile { background: #020617; color: #fff; border: 4px solid #f1c40f; box-shadow: 0 0 40px rgba(241, 196, 15, 0.6); animation: neon-flicker 3s infinite; }
+        .danger-tile { background: linear-gradient(135deg, #7f1d1d, #ef4444); color: white; animation: pulse-red 2s infinite; }
+        .safe-tile { background: linear-gradient(135deg, #064e3b, #10b981); color: white; }
+        .reverse-tile { background: linear-gradient(135deg, #7c2d12, #f97316); color: white; }
+        .lucky-tile { background: linear-gradient(135deg, #78350f, #fbbf24); color: #000; } 
+        .crate-tile { background: #334155; color: white; border: 2px dashed rgba(255,255,255,0.3); } 
+        .shockwave-tile { background: linear-gradient(135deg, #701a75, #d946ef); color: white; }
+        .shield-tile { background: linear-gradient(135deg, #0c4a6e, #0ea5e9); color: white; }
+
+        .board-legend {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid #334155;
+            border-radius: 20px;
+            padding: 24px;
+            margin-top: 32px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .legend-item { display: flex; align-items: center; gap: 12px; font-size: 0.75rem; color: #94a3b8; }
+        .legend-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 1rem; flex-shrink: 0; }
+
+        .card { width: 170px; height: 240px; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; color: white; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); border-width: 3px; transition: 0.3s ease; }
+        .card:hover { transform: translateY(-10px) rotate(-1deg); z-index: 100; }
+        .card-action { background: #1e293b; border-color: #475569; }
+        .card-explosion { background: #7f1d1d; border-color: #ef4444; }
+        .card-defense { background: #164e63; border-color: var(--defense); }
+        .card-chaos { background: #701a75; border-color: var(--chaos); }
+        .card-peek { background: #334155; border-color: var(--peek); }
+        .card-defuse { background: #064e3b; border-color: var(--safe); }
+    </style>
+</head>
+<body class="pb-20">
+
+    <header class="relative h-[80vh] flex items-center justify-center overflow-hidden bg-black">
+        <div class="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1514539079130-25950c84af65?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center grayscale"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-slate-950/80 to-[#020617]"></div>
+        <div class="relative text-center z-10 px-4">
+            <h1 class="text-8xl md:text-[10rem] mb-0 text-white drop-shadow-[0_15px_15px_rgba(0,0,0,1)] leading-none">BOOM</h1>
+            <h1 class="text-8xl md:text-[10rem] mb-6 text-danger drop-shadow-[0_15px_15px_rgba(0,0,0,1)] leading-none">BOULEVARD</h1>
+            <p class="text-xl md:text-2xl marker-font text-warning tracking-[0.2em] max-w-4xl mx-auto">
+                SURVIVE THE STREETS OF NEON CITY
+            </p>
+            <div class="mt-12 flex flex-wrap justify-center gap-4">
+                <a href="rulebook.pdf" target="_blank" class="bg-danger hover:bg-red-600 text-white font-black py-4 px-10 rounded-full text-xs transition-all shadow-xl">DOWNLOAD RULEBOOK</a>
+                <a href="#trailer" class="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-black py-4 px-10 rounded-full text-xs border border-white/30 transition-all">WATCH TRAILER</a>
+            </div>
+        </div>
+    </header>
+
+    <nav class="sticky top-0 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800 z-[100] py-5">
+        <div class="container mx-auto px-6 flex flex-wrap justify-center gap-6 md:gap-12 text-[10px] md:text-xs font-black uppercase tracking-[0.3em]">
+            <a href="#pillars" class="hover:text-warning transition-colors">Identity</a>
+            <a href="#trailer" class="hover:text-warning transition-colors">Trailer</a>
+            <a href="#board" class="hover:text-warning transition-colors">Tactical Map</a>
+            <a href="#gallery" class="hover:text-warning transition-colors">Assets</a>
+            <a href="#docs" class="hover:text-warning transition-colors">Team Docs</a>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-6 mt-20">
+        
+        <!-- Pillars & Summary -->
+        <section id="pillars" class="mb-40 grid md:grid-cols-2 gap-20 items-center">
+            <div>
+                <h2 class="text-4xl text-warning mb-6">Game Pillars</h2>
+                <div class="space-y-6">
+                    <div class="border-l-4 border-danger pl-6"><h4 class="font-bold text-white mb-1 uppercase tracking-widest">What</h4><p class="text-slate-400 italic">"Survive the madness of Boom Boulevard, a chaotic explosion-filled race and be the last one standing."</p></div>
+                    <div class="border-l-4 border-warning pl-6"><h4 class="font-bold text-white mb-1 uppercase tracking-widest">How</h4><p class="text-slate-400 italic">"Boom Boulevard is set to detonate. Only one survivor gets out before it explodes."</p></div>
+                    <div class="border-l-4 border-safe pl-6"><h4 class="font-bold text-white mb-1 uppercase tracking-widest">Why</h4><p class="text-slate-400 italic">"Roll to advance down the board and play explosive action cards to sabotage, defend, and eliminate your rivals."</p></div>
+                </div>
+            </div>
+            <div class="bg-slate-900/50 p-10 rounded-3xl border border-slate-800 backdrop-blur-sm">
+                <h3 class="text-2xl text-white mb-4">Development Context</h3>
+                <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                    Boom Boulevard draws heavy inspiration from the high-tension interactive mechanics of <em>Exploding Kittens</em> combined with the chaotic movement elements of <em>Sorry!</em>. Our group's focus was on creating a balanced "risk vs reward" system where leader targeting is natural and every turn feels unpredictable.
+                </p>
+                <div class="flex gap-4">
+                    <span class="text-[10px] px-3 py-1 bg-slate-800 rounded-full font-bold">CHAOTIC</span>
+                    <span class="text-[10px] px-3 py-1 bg-slate-800 rounded-full font-bold">SOCIAL</span>
+                    <span class="text-[10px] px-3 py-1 bg-slate-800 rounded-full font-bold">REVENGE-DRIVEN</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trailer Section -->
+        <section id="trailer" class="mb-40">
+            <div class="text-center mb-12"><h2 class="text-4xl text-warning">Official Trailer</h2></div>
+            <div class="max-w-4xl mx-auto aspect-video bg-slate-900 rounded-[2rem] border-4 border-slate-800 overflow-hidden shadow-2xl flex items-center justify-center">
+                <iframe class="w-full h-full" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Game Trailer" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+            <p class="mt-6 text-center text-slate-500 italic text-sm">Team Boom Boulevard | Production Duration: 3 Minutes</p>
+        </section>
+
+        <!-- Tactical Board Section -->
+        <section id="board" class="mb-40">
+            <div class="text-center mb-16">
+                <h2 class="text-5xl text-white mb-4">Tactical Grid</h2>
+                <p class="text-slate-400 marker-font text-xl">Sector Analysis: 40-Tile Linear Gauntlet</p>
+            </div>
+            
+            <div class="board-wrapper overflow-x-auto">
+                <div class="board-container min-w-[900px]">
+                    <!-- ROW 1 -->
+                    <div class="board-tile start-tile" style="grid-column: 1; grid-row: 1;">
+                        <span class="tile-hud">INIT::01</span><span class="tile-icon">📍</span>GROUND ZERO<span class="tile-num">1</span>
+                    </div>
+                    <div class="board-tile safe-tile" style="grid-column: 2; grid-row: 1;">
+                        <span class="tile-icon">✅</span>SAFE ZONE<span class="tile-num">2</span>
+                    </div>
+                    <div class="board-tile danger-tile" style="grid-column: 3; grid-row: 1;">
+                        <span class="tile-icon">💣</span>BLAST ZONE<span class="tile-num">3</span>
+                    </div>
+                    <div class="board-tile lucky-tile" style="grid-column: 4; grid-row: 1;">
+                        <span class="tile-icon">🎰</span>LUCKY BOUNCE<span class="tile-num">4</span>
+                    </div>
+                    <div class="board-tile danger-tile" style="grid-column: 5; grid-row: 1;">
+                        <span class="tile-icon">💣</span>BLAST ZONE<span class="tile-num">5</span>
+                    </div>
+                    <div class="board-tile safe-tile" style="grid-column: 6; grid-row: 1;">
+                        <span class="tile-icon">✅</span>SAFE ZONE<span class="tile-num">6</span>
+                    </div>
+                    <div class="board-tile crate-tile" style="grid-column: 7; grid-row: 1;">
+                        <span class="tile-icon">📦</span>SUPPLY CRATE<span class="tile-num">7</span>
+                    </div>
+                    <div class="board-tile danger-tile" style="grid-column: 8; grid-row: 1;">
+                        <span class="tile-icon">💣</span>BLAST ZONE<span class="tile-num">8</span>
+                    </div>
+                    
+                    <!-- ROW 2 -->
+                    <div class="board-tile safe-tile" style="grid-column: 8; grid-row: 2;"><span class="tile-icon">✅</span>SAFE<span class="tile-num">9</span></div>
+                    <div class="board-tile shockwave-tile" style="grid-column: 7; grid-row: 2;"><span class="tile-icon">🌊</span>SHOCKWAVE<span class="tile-num">10</span></div>
+                    <div class="board-tile crate-tile" style="grid-column: 6; grid-row: 2;"><span class="tile-icon">📦</span>CRATE<span class="tile-num">11</span></div>
+                    <div class="board-tile danger-tile" style="grid-column: 5; grid-row: 2;"><span class="tile-icon">💣</span>BLAST<span class="tile-num">12</span></div>
+                    <div class="board-tile shield-tile" style="grid-column: 4; grid-row: 2;"><span class="tile-icon">🛡️</span>SHIELD<span class="tile-num">13</span></div>
+                    <div class="board-tile reverse-tile" style="grid-column: 3; grid-row: 2;"><span class="tile-icon">↩️</span>WRONG TURN<span class="tile-num">14</span></div>
+                    <div class="board-tile danger-tile" style="grid-column: 2; grid-row: 2;"><span class="tile-icon">💣</span>BLAST<span class="tile-num">15</span></div>
+                    <div class="board-tile safe-tile" style="grid-column: 1; grid-row: 2;"><span class="tile-icon">✅</span>SAFE<span class="tile-num">16</span></div>
+                    
+                    <!-- Row 3 -->
+                    <div class="board-tile crate-tile" style="grid-column: 1; grid-row: 3;"><span class="tile-num">17</span><span class="tile-icon">📦</span>CRATE</div>
+                    <div class="board-tile lucky-tile" style="grid-column: 2; grid-row: 3;"><span class="tile-num">18</span><span class="tile-icon">🎰</span>LUCKY</div>
+                    <div class="board-tile danger-tile" style="grid-column: 3; grid-row: 3;"><span class="tile-num">19</span><span class="tile-icon">💣</span>BLAST</div>
+                    <div class="board-tile safe-tile" style="grid-column: 4; grid-row: 3;"><span class="tile-num">20</span><span class="tile-icon">✅</span>SAFE</div>
+                    <div class="board-tile shield-tile" style="grid-column: 5; grid-row: 3;"><span class="tile-num">21</span><span class="tile-icon">🛡️</span>SHIELD</div>
+                    <div class="board-tile shockwave-tile" style="grid-column: 6; grid-row: 3;"><span class="tile-num">22</span><span class="tile-icon">🌊</span>SHOCK</div>
+                    <div class="board-tile danger-tile" style="grid-column: 7; grid-row: 3;"><span class="tile-num">23</span><span class="tile-icon">💣</span>BLAST</div>
+                    <div class="board-tile safe-tile" style="grid-column: 8; grid-row: 3;"><span class="tile-num">24</span><span class="tile-icon">✅</span>SAFE</div>
+                    
+                    <!-- Row 4 -->
+                    <div class="board-tile danger-tile" style="grid-column: 8; grid-row: 4;"><span class="tile-num">25</span><span class="tile-icon">💣</span>BLAST</div>
+                    <div class="board-tile shockwave-tile" style="grid-column: 7; grid-row: 4;"><span class="tile-num">26</span><span class="tile-icon">🌊</span>SHOCK</div>
+                    <div class="board-tile safe-tile" style="grid-column: 6; grid-row: 4;"><span class="tile-num">27</span><span class="tile-icon">✅</span>SAFE</div>
+                    <div class="board-tile crate-tile" style="grid-column: 5; grid-row: 4;"><span class="tile-num">28</span><span class="tile-icon">📦</span>CRATE</div>
+                    <div class="board-tile danger-tile" style="grid-column: 4; grid-row: 4;"><span class="tile-num">29</span><span class="tile-icon">💣</span>BLAST</div>
+                    <div class="board-tile lucky-tile" style="grid-column: 3; grid-row: 4;"><span class="tile-num">30</span><span class="tile-icon">🎰</span>LUCKY</div>
+                    <div class="board-tile shield-tile" style="grid-column: 2; grid-row: 4;"><span class="tile-num">31</span><span class="tile-icon">🛡️</span>SHIELD</div>
+                    <div class="board-tile danger-tile" style="grid-column: 1; grid-row: 4;"><span class="tile-num">32</span><span class="tile-icon">💣</span>BLAST</div>
+                    
+                    <!-- Row 5 -->
+                    <div class="board-tile safe-tile" style="grid-column: 1; grid-row: 5;"><span class="tile-num">33</span><span class="tile-icon">✅</span>SAFE</div>
+                    <div class="board-tile danger-tile" style="grid-column: 2; grid-row: 5;"><span class="tile-num">34</span><span class="tile-icon">💣</span>BLAST</div>
+                    <div class="board-tile shockwave-tile" style="grid-column: 3; grid-row: 5;"><span class="tile-num">35</span><span class="tile-icon">🌊</span>SHOCK</div>
+                    <div class="board-tile crate-tile" style="grid-column: 4; grid-row: 5;"><span class="tile-num">36</span><span class="tile-icon">📦</span>CRATE</div>
+                    <div class="board-tile danger-tile" style="grid-column: 5; grid-row: 5;"><span class="tile-num">37</span><span class="tile-icon">💣</span>BLAST</div>
+                    <div class="board-tile lucky-tile" style="grid-column: 6; grid-row: 5;"><span class="tile-num">38</span><span class="tile-icon">🎰</span>LUCKY</div>
+                    <div class="board-tile danger-tile" style="grid-column: 7; grid-row: 5;"><span class="tile-icon">💥</span>DEAD END</div>
+                    <div class="board-tile end-tile" style="grid-column: 8; grid-row: 5;">
+                        <span class="tile-hud">EXIT::AUTH</span><span class="tile-icon">🏁</span>ESCAPED!<span class="tile-num">40</span>
+                    </div>
+                </div>
+
+                <div class="board-legend">
+                    <div class="legend-item"><div class="legend-icon start-tile">📍</div><div><p class="font-bold text-white uppercase">Ground Zero</p><p>Sector Entry / Start Point.</p></div></div>
+                    <div class="legend-item"><div class="legend-icon safe-tile">✅</div><div><p class="font-bold text-white uppercase">Safe Zone</p><p>Neutral Ground. No effects.</p></div></div>
+                    <div class="legend-item"><div class="legend-icon danger-tile">💣</div><div><p class="font-bold text-white uppercase">Blast Zone</p><p>Draw card immediately. Survive or Die.</p></div></div>
+                    <div class="legend-item"><div class="legend-icon shield-tile">🛡️</div><div><p class="font-bold text-white uppercase">Shield Zone</p><p>Temporary blast protection.</p></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gallery Section -->
+        <section id="gallery" class="mb-40">
+            <h2 class="text-4xl text-warning mb-16 text-center tracking-[0.2em]">Visual Gallery</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                <div class="card card-explosion"><h4 class="text-xs font-black">STREET MINE</h4><div class="flex-1 flex items-center justify-center text-5xl">💣</div></div>
+                <div class="card card-defuse"><h4 class="text-xs font-black">BOMB SQUAD</h4><div class="flex-1 flex items-center justify-center text-5xl">🛠️</div></div>
+                <div class="card card-action"><h4 class="text-xs font-black">SHORTCUT</h4><div class="flex-1 flex items-center justify-center text-5xl">🚀</div></div>
+                <div class="card card-defense"><h4 class="text-xs font-black">NOPE</h4><div class="flex-1 flex items-center justify-center text-5xl">🚫</div></div>
+                <div class="card card-peek"><h4 class="text-xs font-black">DRONE</h4><div class="flex-1 flex items-center justify-center text-5xl">🛰️</div></div>
+                <div class="card card-chaos"><h4 class="text-xs font-black">PANIC</h4><div class="flex-1 flex items-center justify-center text-5xl">🏃‍♀️</div></div>
+            </div>
+            <p class="text-center text-slate-500 mt-8 text-sm">Every component from cards to dice has been digitally prototyped for a premium tabletop feel.</p>
+        </section>
+
+        <!-- Technical Documents Section -->
+        <section id="docs" class="mb-40 bg-slate-900 rounded-[3rem] p-12 md:p-20 shadow-2xl">
+            <h2 class="text-4xl text-white mb-12 text-center uppercase tracking-widest">Team Portal</h2>
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                <a href="group_meeting_log.pdf" target="_blank" class="bg-slate-800 p-8 rounded-3xl border border-slate-700 hover:border-warning transition-all text-center group">
+                    <h4 class="text-warning font-bold mb-1 uppercase text-xs">Meeting Log</h4>
+                    <p class="text-[10px] text-slate-500 group-hover:text-white transition-colors">MINUTES & SUMMARIES</p>
+                </a>
+                <a href="playtesting_log.pdf" target="_blank" class="bg-slate-800 p-8 rounded-3xl border border-slate-700 hover:border-warning transition-all text-center group">
+                    <h4 class="text-warning font-bold mb-1 uppercase text-xs">Playtest Log</h4>
+                    <p class="text-[10px] text-slate-500 group-hover:text-white transition-colors">INSIGHTS & REVISIONS</p>
+                </a>
+                <a href="flowchart.pdf" target="_blank" class="bg-slate-800 p-8 rounded-3xl border border-slate-700 hover:border-warning transition-all text-center group">
+                    <h4 class="text-warning font-bold mb-1 uppercase text-xs">Flowchart</h4>
+                    <p class="text-[10px] text-slate-500 group-hover:text-white transition-colors">MECHANIC LOGIC</p>
+                </a>
+                <a href="balance_analysis.pdf" target="_blank" class="bg-slate-800 p-8 rounded-3xl border border-slate-700 hover:border-warning transition-all text-center group">
+                    <h4 class="text-warning font-bold mb-1 uppercase text-xs">Balance Analysis</h4>
+                    <p class="text-[10px] text-slate-500 group-hover:text-white transition-colors">QUANTITATIVE PROFILE</p>
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-20 border-t border-slate-900">
+        <h2 class="text-4xl marker-font text-white mb-2">BOOM BOULEVARD</h2>
+        <p class="text-slate-500 text-sm tracking-[0.5em] uppercase">Digital Design Artifact v3.2</p>
+    </footer>
+
+</body>
+</html>
